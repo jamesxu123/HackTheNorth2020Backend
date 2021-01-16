@@ -7,6 +7,7 @@ var app = require('../app');
 var debug = require('debug')('hackthenorth2020backend:server');
 var http = require('http');
 require('./sequelize');
+require('./MouseShare');
 /**
  * Get port from environment and store in Express.
  */

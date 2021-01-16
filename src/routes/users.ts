@@ -1,16 +1,14 @@
 import e, {NextFunction, Request, Response} from "express";
 import {Workspace, WorkspaceEntry} from "../bin/sequelize";
 import WorkspaceController from "../controllers/WorkspaceController";
+import Middleware from "../middleware";
+
 const bcrypt = require('bcrypt');
 const {User} = require('../bin/sequelize');
+const jwt = require('jsonwebtoken')
 
 var express = require('express');
 var router = express.Router();
-
-/* GET users listing. */
-router.post('/login', function (req: Request, res: Response, next: NextFunction) {
-    res.send('respond with a resource');
-});
 
 /**
  * @api {post} / Create user
@@ -37,7 +35,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
             username: req.body.username,
             password: bcrypt.hashSync(req.body.password, 10)
         })
-        res.send(result)
+        const token = jwt.sign(result.toJSON(), 'hackthenorth2020')
+        res.send({token: token})
     } else {
         res.send({
             "error": "Account already exists"
@@ -45,14 +44,45 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 })
 
-router.get('/workspaces', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    if (!username || !password) {
+        res.sendStatus(400)
+        return;
+    }
+
+    const doc = await User.findOne({where: {username: username}});
+
+    if (!doc) {
+        res.sendStatus(401)
+        return;
+    }
+
+    const hash = doc.password;
+
+    const result = await bcrypt.compare(password, hash);
+
+    console.log(result)
+
+    if (result) {
+        const token = jwt.sign(doc.toJSON(), 'hackthenorth2020')
+        console.log(token)
+        res.send({token: token})
+    } else {
+        res.send('ERROR').status(401)
+    }
+})
+
+router.get('/workspaces', Middleware.requireJWT, async (req: Request, res: Response, next: NextFunction) => {
     const username = req.query.username;
     const doc = await User.findOne({where: {username: username}});
     const results = await doc.getWorkspaces();
     res.send(results)
 })
 
-router.get('/workspaces/:userId/:workspaceId/entry', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/workspaces/:userId/:workspaceId/entry', Middleware.requireJWT, async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userId;
     const workspaceId = req.params.workspaceId;
     const entry = await WorkspaceController.getUserEntryForWorkspace(workspaceId, userId)

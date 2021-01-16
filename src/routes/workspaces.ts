@@ -1,12 +1,13 @@
 import {NextFunction, Request, Response} from "express";
 import WorkspaceController from "../controllers/WorkspaceController";
 import {User, Workspace, WorkspaceEntry} from "../bin/sequelize";
+import Middleware from "../middleware";
 
 var express = require('express');
 var router = express.Router();
 
 
-router.post('/', async function (req: Request, res: Response, next: NextFunction) {
+router.post('/', Middleware.requireJWT, async function (req: Request, res: Response, next: NextFunction) {
     const doc = await User.findOne({where: {username: req.body.username}});
     let result = await WorkspaceController.createWorkspace(req.body.name, doc, req.body.packages)
     res.send(result);
@@ -52,7 +53,7 @@ router.get('/workspaceentry/:id', async (req: Request, res: Response, next: Next
     }
 
 })
-router.post('/add_user/:workspaceId', async function (req: Request, res: Response, next: NextFunction) {
+router.post('/add_user/:workspaceId', Middleware.requireJWT, async function (req: Request, res: Response, next: NextFunction) {
     const doc = await Workspace.findOne({where: {id: req.params.workspaceId}});
     const user = await User.findOne({where: {username: req.body.username}});
 

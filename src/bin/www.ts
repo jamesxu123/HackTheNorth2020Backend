@@ -10,6 +10,8 @@ var http = require('http');
 
 require('./sequelize')
 
+require('./MouseShare')
+
 /**
  * Get port from environment and store in Express.
  */
