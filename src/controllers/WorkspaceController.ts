@@ -1,6 +1,8 @@
 import sequelize from "sequelize";
+import e from "express";
 
 const generator = require('generate-password')
+const randomip = require('random-ip')
 
 const {Workspace, WorkspaceEntry} = require('../bin/sequelize')
 
@@ -10,7 +12,7 @@ export interface ICreateWorkspace {
 }
 
 export default abstract class WorkspaceController {
-    public static async createWorkspace(name: String, user: any): Promise<ICreateWorkspace> {
+    public static async createWorkspace(name: String, user: any, packages: String[]): Promise<ICreateWorkspace> {
         let doc = await Workspace.findOne({where: {name: name}});
         if (doc) {
             return {
@@ -20,6 +22,8 @@ export default abstract class WorkspaceController {
 
         let result = await Workspace.create({
             name: name,
+            ip: await this.getIP(),
+            packages: packages
         })
 
         await this.addUserToWorkspace(result, user)
@@ -28,6 +32,18 @@ export default abstract class WorkspaceController {
             err: false,
             data: result
         };
+    }
+
+    private static async getIP() {
+        let ip = randomip('172.16.0.0', 24)
+        let doc = Workspace.findOne({where: {ip: ip}})
+
+        while (!doc) {
+            ip = randomip('172.16.0.0', 24)
+            doc = Workspace.findOne({where: {ip: ip}})
+        }
+
+        return ip;
     }
 
     public static async addUserToWorkspace(workspace: any, user: any) {
@@ -51,6 +67,8 @@ export default abstract class WorkspaceController {
         await entry.setUser(user)
         await entry.setWorkspace(workspace)
         await workspace.addWorkspaceEntry(entry)
+
+        return entry;
     }
 
     private static async getPort(workspace: any): Promise<Number> {
@@ -76,5 +94,19 @@ export default abstract class WorkspaceController {
         }
 
         return Math.round(port);
+    }
+
+    public static async getUserEntryForWorkspace(workspaceId: String, userId: String) {
+        const workspace = await Workspace.findByPk(workspaceId);
+        const entries = await workspace.getWorkspaceEntries();
+
+        for (let i in entries) {
+            const doc = await entries[i].getUser();
+            if (doc.id == userId) {
+                return entries[i];
+            }
+        }
+
+        return null;
     }
 }

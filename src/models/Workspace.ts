@@ -6,6 +6,14 @@ module.exports = (sequelize: Sequelize, DataTypes: any) => {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true
+        },
+        ip: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true
+        },
+        packages: {
+            type: DataTypes.JSONB
         }
     })
 }

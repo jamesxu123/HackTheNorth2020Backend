@@ -1,5 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const WorkspaceController_1 = __importDefault(require("../controllers/WorkspaceController"));
 const bcrypt = require('bcrypt');
 const { User } = require('../bin/sequelize');
 var express = require('express');
@@ -29,5 +33,16 @@ router.get('/workspaces', async (req, res, next) => {
     const doc = await User.findOne({ where: { username: username } });
     const results = await doc.getWorkspaces();
     res.send(results);
+});
+router.get('/workspaces/:userId/:workspaceId/entry', async (req, res, next) => {
+    const userId = req.params.userId;
+    const workspaceId = req.params.workspaceId;
+    const entry = await WorkspaceController_1.default.getUserEntryForWorkspace(workspaceId, userId);
+    if (entry) {
+        res.send(entry);
+    }
+    else {
+        res.sendStatus(500);
+    }
 });
 module.exports = router;

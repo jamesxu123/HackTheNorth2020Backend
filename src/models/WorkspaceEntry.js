@@ -10,6 +10,9 @@ module.exports = (sequelize, DataTypes) => {
         password: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        thumbnail: {
+            type: DataTypes.STRING.BINARY
         }
     });
 };
