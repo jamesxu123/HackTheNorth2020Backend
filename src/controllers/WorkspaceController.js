@@ -13,7 +13,14 @@ class WorkspaceController {
         let result = await Workspace.create({
             name: name,
         });
-        const port = 6969;
+        await this.addUserToWorkspace(result, user);
+        return {
+            err: false,
+            data: result
+        };
+    }
+    static async addUserToWorkspace(workspace, user) {
+        const port = await this.getPort(workspace);
         const password = generator.generate({
             length: 8,
             uppercase: true,
@@ -25,15 +32,33 @@ class WorkspaceController {
             port: port,
             password: password
         });
-        await result.addUser(user);
-        await user.addWorkspace(result);
+        await workspace.addUser(user);
+        await user.addWorkspace(workspace);
         await entry.setUser(user);
-        await entry.setWorkspace(result);
-        await result.addWorkspaceEntry(entry);
-        return {
-            err: false,
-            data: result
-        };
+        await entry.setWorkspace(workspace);
+        await workspace.addWorkspaceEntry(entry);
+    }
+    static async getPort(workspace) {
+        let port = Math.random() * 10000 + 50000;
+        let entries = await workspace.getWorkspaceEntries();
+        let valid = true;
+        for (let i in entries) {
+            if (entries[i][port] === port) {
+                valid = false;
+            }
+        }
+        let iter = 0;
+        while (!valid && iter < 100000) {
+            let port = Math.random() * 10000 + 50000;
+            let valid = true;
+            for (let i in entries) {
+                if (entries[i][port] === port) {
+                    valid = false;
+                }
+            }
+            iter++;
+        }
+        return Math.round(port);
     }
 }
 exports.default = WorkspaceController;
