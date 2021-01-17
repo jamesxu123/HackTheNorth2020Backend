@@ -18,7 +18,7 @@ module.exports = (sequelize: Sequelize, DataTypes: any) => {
         vmId: {
             type: DataTypes.INTEGER,
             unique: true,
-            autoIncrement: true,
+            allowNull: false
         }
     })
 }

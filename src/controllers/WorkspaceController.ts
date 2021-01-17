@@ -22,11 +22,12 @@ export default abstract class WorkspaceController {
                 errString: "Already exists"
             };
         }
-
+        const ip = await this.getIP();
         let result = await Workspace.create({
             name: name,
-            ip: await this.getIP(),
-            packages: packages
+            ip: ip,
+            packages: packages,
+            vmId: parseInt(ip.replace(/\D/g,''))
         })
 
         await this.addUserToWorkspace(result, user)

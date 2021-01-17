@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         packages: {
             type: DataTypes.JSONB
+        },
+        vmId: {
+            type: DataTypes.INTEGER,
+            unique: true,
+            allowNull: false
         }
     });
 };
