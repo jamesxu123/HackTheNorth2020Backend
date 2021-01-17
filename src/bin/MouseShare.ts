@@ -59,17 +59,16 @@ wss.on('connection', (ws: any) => {
 })
 
 const interval = setInterval(function ping() {
-    // wss.clients.forEach(function each(ws: any) {
-    //     if (ws.isAlive === false) {
-    //         console.log('bye')
-    //         positions = {};
-    //         return ws.terminate();
-    //     }
-    //
-    //     ws.isAlive = false;
-    //     ws.ping(noop);
-    // });
-    positions = {}
+    wss.clients.forEach(function each(ws: any) {
+        if (ws.isAlive === false) {
+            console.log('bye')
+            positions = {};
+            return ws.terminate();
+        }
+
+        ws.isAlive = false;
+        ws.ping(noop);
+    });
 }, 10000);
 
 wss.on('close', function close() {
