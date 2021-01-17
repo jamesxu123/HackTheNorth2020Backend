@@ -54,7 +54,7 @@ export default abstract class WorkspaceController {
             }, {
                 headers: {'Content-Type': 'application/json'}
             })
-        }, 30_000)
+        }, 20_000)
 
 
         return {
