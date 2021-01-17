@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const sequelize_1 = require("../bin/sequelize");
 const generator = require('generate-password');
 const randomip = require('random-ip');
 const { Workspace, WorkspaceEntry } = require('../bin/sequelize');
@@ -33,7 +34,7 @@ class WorkspaceController {
         return ip;
     }
     static async addUserToWorkspace(workspace, user) {
-        const port = await this.getPort(workspace);
+        const port = await this.getPort();
         const password = generator.generate({
             length: 8,
             uppercase: true,
@@ -45,6 +46,7 @@ class WorkspaceController {
             port: port,
             password: password
         });
+        await sequelize_1.Port.create({ port: port });
         await workspace.addUser(user);
         await user.addWorkspace(workspace);
         await entry.setUser(user);
@@ -52,24 +54,13 @@ class WorkspaceController {
         await workspace.addWorkspaceEntry(entry);
         return entry;
     }
-    static async getPort(workspace) {
+    static async getPort() {
         let port = Math.random() * 10000 + 50000;
-        let entries = await workspace.getWorkspaceEntries();
-        let valid = true;
-        for (let i in entries) {
-            if (entries[i][port] === port) {
-                valid = false;
-            }
-        }
+        let count = await sequelize_1.Port.count({ where: { port: port } });
         let iter = 0;
-        while (!valid && iter < 100000) {
+        while (count > 0 && iter < 100000) {
             let port = Math.random() * 10000 + 50000;
-            let valid = true;
-            for (let i in entries) {
-                if (entries[i][port] === port) {
-                    valid = false;
-                }
-            }
+            count = await sequelize_1.Port.count({ where: { port: port } });
             iter++;
         }
         return Math.round(port);

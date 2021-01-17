@@ -3,6 +3,7 @@ const fs = require('fs');
 const UserModel = require('../models/User')
 const WorkspaceModel = require('../models/Workspace')
 const WorkspaceEntryModel = require('../models/WorkspaceEntry')
+const PortModel = require('../models/Port')
 
 const sequelize = new Sequelize('postgres://bilal:hackthenorth2020@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/oily-hare-188.defaultdb', {
     password: 'hackthenorth2020',
@@ -23,6 +24,7 @@ try {
 const User = UserModel(sequelize, DataTypes)
 const Workspace = WorkspaceModel(sequelize, DataTypes)
 const WorkspaceEntry = WorkspaceEntryModel(sequelize, DataTypes)
+const Port = PortModel(sequelize, DataTypes)
 
 User.belongsToMany(Workspace, {
     through: 'UserWorkspaces',
@@ -57,5 +59,6 @@ sequelize.sync({ force: true })
 export {
     User,
     Workspace,
-    WorkspaceEntry
+    WorkspaceEntry,
+    Port
 }

@@ -1,5 +1,6 @@
 import sequelize from "sequelize";
 import e from "express";
+import {Port} from "../bin/sequelize";
 
 const generator = require('generate-password')
 const randomip = require('random-ip')
@@ -49,7 +50,7 @@ export default abstract class WorkspaceController {
     }
 
     public static async addUserToWorkspace(workspace: any, user: any) {
-        const port = await this.getPort(workspace);
+        const port = await this.getPort();
 
         const password = generator.generate({
             length: 8,
@@ -64,6 +65,8 @@ export default abstract class WorkspaceController {
             password: password
         })
 
+        await Port.create({port: port})
+
         await workspace.addUser(user)
         await user.addWorkspace(workspace)
         await entry.setUser(user)
@@ -73,25 +76,15 @@ export default abstract class WorkspaceController {
         return entry;
     }
 
-    private static async getPort(workspace: any): Promise<Number> {
+    private static async getPort(): Promise<Number> {
         let port = Math.random() * 10_000 + 50_000;
 
-        let entries = await workspace.getWorkspaceEntries();
-        let valid = true;
-        for (let i in entries) {
-            if (entries[i][port] === port) {
-                valid = false;
-            }
-        }
+        let count = await Port.count({where: {port: port}})
+
         let iter = 0;
-        while (!valid && iter < 100_000) {
+        while (count > 0 && iter < 100_000) {
             let port = Math.random() * 10_000 + 50_000;
-            let valid = true;
-            for (let i in entries) {
-                if (entries[i][port] === port) {
-                    valid = false;
-                }
-            }
+            count = await Port.count({where: {port: port}})
             iter++;
         }
 
