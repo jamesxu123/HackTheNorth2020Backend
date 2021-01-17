@@ -8,6 +8,7 @@ const {Workspace, WorkspaceEntry} = require('../bin/sequelize')
 
 export interface ICreateWorkspace {
     err: boolean,
+    errString?: String,
     data?: sequelize.Model
 }
 
@@ -16,7 +17,8 @@ export default abstract class WorkspaceController {
         let doc = await Workspace.findOne({where: {name: name}});
         if (doc) {
             return {
-                err: true
+                err: true,
+                errString: "Already exists"
             };
         }
 

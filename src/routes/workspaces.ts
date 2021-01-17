@@ -34,7 +34,7 @@ router.patch('/workspaceentry/:id/thumbnail', async (req: Request, res: Response
         res.send({err: false})
     } catch (e) {
         console.log(e)
-        res.status(500).send({err: e})
+        res.status(500).send({err: e.toString()})
     }
 
 })
@@ -49,10 +49,57 @@ router.get('/workspaceentry/:id', async (req: Request, res: Response, next: Next
         res.send(doc)
     } catch (e) {
         console.log(e)
-        res.status(500).send({err: e})
+        res.status(500).send({err: e.toString()})
     }
 
 })
+
+router.delete('/:id', async function (req: Request, res: Response, next: NextFunction) {
+    try {
+        const doc = await Workspace.findByPk(req.params.id);
+        if (!doc) {
+            res.sendStatus(400);
+            return;
+        }
+        const entries = await doc.getWorkspaceEntries();
+        for (let i in entries) {
+            await entries[i].destroy();
+        }
+        await doc?.destroy();
+        res.sendStatus(200)
+    } catch (e) {
+        console.log(e)
+        res.status(500).send({err: e.toString()})
+    }
+});
+/**
+ * body = {userId: ...}
+ */
+router.post('/remove_user/:workspaceId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = await User.findByPk(req.body.userId);
+        const workspace = await Workspace.findByPk(req.params.workspaceId)
+
+        const entries = await workspace.getWorkspaceEntries();
+        let found = false;
+        for (let i in entries) {
+            const entry_user = await entries[i].getUser();
+            console.log(entry_user.id)
+            if (entry_user.id == req.body.userId) {
+                await entries[i].destroy();
+                found = true;
+            }
+        }
+
+        await workspace.removeUser(user);
+        await user.removeWorkspace(workspace);
+        res.sendStatus(200)
+    } catch (e) {
+        console.log(e.toString())
+        res.status(500).send({err: e.toString()})
+    }
+})
+
 router.post('/add_user/:workspaceId', Middleware.requireJWT, async function (req: Request, res: Response, next: NextFunction) {
     const doc = await Workspace.findOne({where: {id: req.params.workspaceId}});
     const user = await User.findOne({where: {username: req.body.username}});

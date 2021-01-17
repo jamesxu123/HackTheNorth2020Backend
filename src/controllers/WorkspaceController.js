@@ -8,7 +8,8 @@ class WorkspaceController {
         let doc = await Workspace.findOne({ where: { name: name } });
         if (doc) {
             return {
-                err: true
+                err: true,
+                errString: "Already exists"
             };
         }
         let result = await Workspace.create({
