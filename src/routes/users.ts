@@ -92,4 +92,16 @@ router.get('/workspaces/:userId/:workspaceId/entry', Middleware.requireJWT, asyn
         res.sendStatus(500)
     }
 })
+
+router.get('/vnc_url', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const username = req.query.username;
+        const workspaceId = req.query.workspaceId;
+
+        res.send(await WorkspaceController.getVncUrl(username, workspaceId))
+    } catch (e) {
+        console.log(e)
+        res.status(500).send({err: e.toString()})
+    }
+})
 module.exports = router;

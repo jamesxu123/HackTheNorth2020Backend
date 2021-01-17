@@ -85,4 +85,15 @@ router.get('/workspaces/:userId/:workspaceId/entry', middleware_1.default.requir
         res.sendStatus(500);
     }
 });
+router.get('/vnc_url', async (req, res, next) => {
+    try {
+        const username = req.query.username;
+        const workspaceId = req.query.workspaceId;
+        res.send(await WorkspaceController_1.default.getVncUrl(username, workspaceId));
+    }
+    catch (e) {
+        console.log(e);
+        res.status(500).send({ err: e.toString() });
+    }
+});
 module.exports = router;

@@ -1,6 +1,6 @@
 import sequelize from "sequelize";
-import e from "express";
-import {Port} from "../bin/sequelize";
+import {Port, User} from "../bin/sequelize";
+import axios from "axios";
 
 const generator = require('generate-password')
 const randomip = require('random-ip')
@@ -14,6 +14,12 @@ export interface ICreateWorkspace {
 }
 
 export default abstract class WorkspaceController {
+    static baseUrl = 'http://ceres.host.412294.xyz:5000'
+
+    static vncUrl = 'http://172.29.58.62:5000/vnc'
+
+    static vncHostUrl = 'ceres.host.412294.xyz'
+
     public static async createWorkspace(name: String, user: any, packages: String[]): Promise<ICreateWorkspace> {
         let doc = await Workspace.findOne({where: {name: name}});
         if (doc) {
@@ -27,10 +33,29 @@ export default abstract class WorkspaceController {
             name: name,
             ip: ip,
             packages: packages,
-            vmId: parseInt(ip.replace(/\D/g,''))
+            vmId: parseInt(ip.replace(/\D/g, ''))
         })
 
-        await this.addUserToWorkspace(result, user)
+        await axios.post(`${this.baseUrl}/setup/`, {
+            workspaceId: result.id,
+            name: name,
+            vmId: parseInt(ip.replace(/\D/g, '')),
+            ip: ip
+        }, {
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        setTimeout(async () => {
+            await this.addUserToWorkspace(result, user)
+
+            await axios.post(`${this.baseUrl}/init/`, {
+                packages: packages,
+                ip: ip
+            }, {
+                headers: {'Content-Type': 'application/json'}
+            })
+        }, 30_000)
+
 
         return {
             err: false,
@@ -58,7 +83,6 @@ export default abstract class WorkspaceController {
             uppercase: true,
             lowercase: true,
             numbers: true,
-            symbols: true
         })
 
         let entry = await WorkspaceEntry.create({
@@ -73,6 +97,15 @@ export default abstract class WorkspaceController {
         await entry.setUser(user)
         await entry.setWorkspace(workspace)
         await workspace.addWorkspaceEntry(entry)
+
+        await axios.post(`${this.baseUrl}/addUser/`, {
+            ip: workspace.ip,
+            user: user.username,
+            port: port,
+            password: password
+        }, {
+            headers: {'Content-Type': 'application/json'}
+        })
 
         return entry;
     }
@@ -104,5 +137,12 @@ export default abstract class WorkspaceController {
         }
 
         return null;
+    }
+
+    public static async getVncUrl(username: any, workspaceId: any) {
+        const user = await User.findOne({where: {username: username}});
+        const entry = await this.getUserEntryForWorkspace(workspaceId, user.id);
+
+        return `${this.vncUrl}?port=${entry.port}&host=${this.vncHostUrl}&password=123abc&autoconnect=true&resize=remote`;
     }
 }

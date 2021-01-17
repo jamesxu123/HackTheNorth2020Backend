@@ -31,31 +31,45 @@ const wss = new WebSock.Server({
     }
 });
 
-let positions = {}
+let positions: any = {}
+
+interface IWSCom {
+    username: string,
+    data: object,
+    port: number
+}
 
 wss.on('connection', (ws: any) => {
     ws.isAlive = true;
     ws.on('pong', heartbeat);
     ws.on('message', (message: any) => {
         // @ts-ignore
-        const obj = JSON.parse(message.toString())
-        // @ts-ignore
-        positions[obj.username] = obj.data
-        ws.send(JSON.stringify(positions))
+        const obj: IWSCom = JSON.parse(message.toString())
+        // // @ts-ignore
+        // positions[obj.username] = obj.data
+
+        if (positions[obj.port]) {
+            positions[obj.port][obj.username] = obj.data
+        } else {
+            positions[obj.port] = {}
+            positions[obj.port][obj.username] = obj.data
+        }
+        ws.send(JSON.stringify(positions[obj.port]))
     })
 })
 
 const interval = setInterval(function ping() {
-    wss.clients.forEach(function each(ws: any) {
-        if (ws.isAlive === false) {
-            console.log('bye')
-            positions = {};
-            return ws.terminate();
-        }
-
-        ws.isAlive = false;
-        ws.ping(noop);
-    });
+    // wss.clients.forEach(function each(ws: any) {
+    //     if (ws.isAlive === false) {
+    //         console.log('bye')
+    //         positions = {};
+    //         return ws.terminate();
+    //     }
+    //
+    //     ws.isAlive = false;
+    //     ws.ping(noop);
+    // });
+    positions = {}
 }, 10000);
 
 wss.on('close', function close() {

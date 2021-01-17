@@ -9,13 +9,19 @@ const middleware_1 = __importDefault(require("../middleware"));
 var express = require('express');
 var router = express.Router();
 router.post('/', middleware_1.default.requireJWT, async function (req, res, next) {
-    const doc = await sequelize_1.User.findOne({ where: { username: req.body.username } });
-    let result = await WorkspaceController_1.default.createWorkspace(req.body.name, doc, req.body.packages);
-    if (result.err) {
-        res.status(400).send(result);
-        return;
+    try {
+        const doc = await sequelize_1.User.findOne({ where: { username: req.body.username } });
+        let result = await WorkspaceController_1.default.createWorkspace(req.body.name, doc, req.body.packages);
+        if (result.err) {
+            res.status(400).send(result);
+            return;
+        }
+        res.send(result);
     }
-    res.send(result);
+    catch (e) {
+        console.log(e);
+        res.status(500).send({ err: e.toString() });
+    }
 });
 router.get('/:id', async function (req, res, next) {
     const doc = await sequelize_1.Workspace.findOne({ where: { id: req.params.id } });
@@ -105,8 +111,15 @@ router.post('/remove_user/:workspaceId', async (req, res, next) => {
     }
 });
 router.post('/add_user/:workspaceId', middleware_1.default.requireJWT, async function (req, res, next) {
-    const doc = await sequelize_1.Workspace.findOne({ where: { id: req.params.workspaceId } });
-    const user = await sequelize_1.User.findOne({ where: { username: req.body.username } });
-    res.send(await WorkspaceController_1.default.addUserToWorkspace(doc, user));
+    try {
+        const doc = await sequelize_1.Workspace.findOne({ where: { id: req.params.workspaceId } });
+        const user = await sequelize_1.User.findOne({ where: { username: req.body.username } });
+        const result = await WorkspaceController_1.default.addUserToWorkspace(doc, user);
+        res.send(result);
+    }
+    catch (e) {
+        console.log(e.toString());
+        res.status(500).send({ err: e.toString() });
+    }
 });
 module.exports = router;

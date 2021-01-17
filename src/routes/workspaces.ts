@@ -8,13 +8,18 @@ var router = express.Router();
 
 
 router.post('/', Middleware.requireJWT, async function (req: Request, res: Response, next: NextFunction) {
-    const doc = await User.findOne({where: {username: req.body.username}});
-    let result = await WorkspaceController.createWorkspace(req.body.name, doc, req.body.packages)
-    if (result.err) {
-        res.status(400).send(result);
-        return;
+    try {
+        const doc = await User.findOne({where: {username: req.body.username}});
+        let result = await WorkspaceController.createWorkspace(req.body.name, doc, req.body.packages)
+        if (result.err) {
+            res.status(400).send(result);
+            return;
+        }
+        res.send(result);
+    } catch (e) {
+        console.log(e)
+        res.status(500).send({err: e.toString()})
     }
-    res.send(result);
 });
 
 router.get('/:id', async function (req: Request, res: Response, next: NextFunction) {
@@ -110,10 +115,15 @@ router.post('/remove_user/:workspaceId', async (req: Request, res: Response, nex
 })
 
 router.post('/add_user/:workspaceId', Middleware.requireJWT, async function (req: Request, res: Response, next: NextFunction) {
-    const doc = await Workspace.findOne({where: {id: req.params.workspaceId}});
-    const user = await User.findOne({where: {username: req.body.username}});
-
-    res.send(await WorkspaceController.addUserToWorkspace(doc, user))
+    try {
+        const doc = await Workspace.findOne({where: {id: req.params.workspaceId}});
+        const user = await User.findOne({where: {username: req.body.username}});
+        const result = await WorkspaceController.addUserToWorkspace(doc, user)
+        res.send(result)
+    } catch (e) {
+        console.log(e.toString())
+        res.status(500).send({err: e.toString()})
+    }
 });
 
 module.exports = router

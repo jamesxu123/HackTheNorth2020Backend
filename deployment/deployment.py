@@ -44,7 +44,7 @@ def initWorkspace():
     ip = request.json["ip"]
     packages = request.json["packages"]
     
-    res = subprocess.call('/usr/bin/ssh -o "StrictHostKeyChecking=no" %s "apt-get install -y %s"'%(ip, packages), shell=True)
+    res = subprocess.call('/usr/bin/ssh -o "StrictHostKeyChecking=no" %s "apt-get install -y %s"'%(ip, ' '.join(packages)), shell=True)
     print(res)
     return "OK"
 

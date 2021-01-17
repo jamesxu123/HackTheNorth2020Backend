@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("../bin/sequelize");
+const axios_1 = __importDefault(require("axios"));
 const generator = require('generate-password');
 const randomip = require('random-ip');
 const { Workspace, WorkspaceEntry } = require('../bin/sequelize');
@@ -20,7 +24,23 @@ class WorkspaceController {
             packages: packages,
             vmId: parseInt(ip.replace(/\D/g, ''))
         });
-        await this.addUserToWorkspace(result, user);
+        await axios_1.default.post(`${this.baseUrl}/setup/`, {
+            workspaceId: result.id,
+            name: name,
+            vmId: parseInt(ip.replace(/\D/g, '')),
+            ip: ip
+        }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        setTimeout(async () => {
+            await this.addUserToWorkspace(result, user);
+            await axios_1.default.post(`${this.baseUrl}/init/`, {
+                packages: packages,
+                ip: ip
+            }, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }, 30000);
         return {
             err: false,
             data: result
@@ -42,7 +62,6 @@ class WorkspaceController {
             uppercase: true,
             lowercase: true,
             numbers: true,
-            symbols: true
         });
         let entry = await WorkspaceEntry.create({
             port: port,
@@ -54,6 +73,14 @@ class WorkspaceController {
         await entry.setUser(user);
         await entry.setWorkspace(workspace);
         await workspace.addWorkspaceEntry(entry);
+        await axios_1.default.post(`${this.baseUrl}/addUser/`, {
+            ip: workspace.ip,
+            user: user.username,
+            port: port,
+            password: password
+        }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
         return entry;
     }
     static async getPort() {
@@ -78,5 +105,13 @@ class WorkspaceController {
         }
         return null;
     }
+    static async getVncUrl(username, workspaceId) {
+        const user = await sequelize_1.User.findOne({ where: { username: username } });
+        const entry = await this.getUserEntryForWorkspace(workspaceId, user.id);
+        return `${this.vncUrl}?port=${entry.port}&host=${this.vncHostUrl}&password=123abc&autoconnect=true&resize=remote`;
+    }
 }
 exports.default = WorkspaceController;
+WorkspaceController.baseUrl = 'http://ceres.host.412294.xyz:5000';
+WorkspaceController.vncUrl = 'http://172.29.58.62:5000/vnc';
+WorkspaceController.vncHostUrl = 'ceres.host.412294.xyz';
