@@ -14,6 +14,11 @@ module.exports = (sequelize: Sequelize, DataTypes: any) => {
         },
         packages: {
             type: DataTypes.JSONB
+        },
+        vmId: {
+            type: DataTypes.INTEGER,
+            unique: true,
+            autoIncrement: true,
         }
     })
 }
