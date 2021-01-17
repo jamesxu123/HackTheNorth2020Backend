@@ -11,6 +11,10 @@ var router = express.Router();
 router.post('/', middleware_1.default.requireJWT, async function (req, res, next) {
     const doc = await sequelize_1.User.findOne({ where: { username: req.body.username } });
     let result = await WorkspaceController_1.default.createWorkspace(req.body.name, doc, req.body.packages);
+    if (result.err) {
+        res.status(400).send(result);
+        return;
+    }
     res.send(result);
 });
 router.get('/:id', async function (req, res, next) {
@@ -19,6 +23,10 @@ router.get('/:id', async function (req, res, next) {
         entries: await doc.getWorkspaceEntries(),
         workspace: doc
     });
+});
+router.get('/:id/users', async function (req, res, next) {
+    const doc = await sequelize_1.Workspace.findOne({ where: { id: req.params.id } });
+    res.send(await doc.getUsers());
 });
 router.patch('/workspaceentry/:id/thumbnail', async (req, res, next) => {
     try {

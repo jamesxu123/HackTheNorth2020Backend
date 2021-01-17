@@ -36,7 +36,7 @@ Workspace.hasMany(User);
 WorkspaceEntry.belongsTo(Workspace);
 Workspace.hasMany(WorkspaceEntry);
 WorkspaceEntry.hasOne(User);
-sequelize.sync({ force: true })
+sequelize.sync()
     .then(() => {
     console.log(`Database & tables created!`);
 });
